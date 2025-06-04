@@ -28,7 +28,7 @@ export default function StartupValuationGame() {
   const [gameOver, setGameOver] = useState(false)
   const [showRightValuation, setShowRightValuation] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
-  const [usedStartupIds, setUsedStartupIds] = useState<Set<number>>(new Set())
+  const [usedStartupIds, setUsedStartupIds] = useState<Set<number>>(new Set()) // Keep as useState for proper tracking if game continues for many rounds
   const [lastGuess, setLastGuess] = useState<"higher" | "lower" | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -136,7 +136,7 @@ export default function StartupValuationGame() {
       setRightStartup(second);
       setPrefetchedNext(third);
       setPrefetchedSecondNext(fourth);
-      setUsedStartupIds(currentUsedIds);
+      setUsedStartupIds(currentUsedIds); // Keep as useState
       setScore(0);
       setGameOver(false);
       setShowRightValuation(false);
@@ -148,7 +148,7 @@ export default function StartupValuationGame() {
       setRightStartup(second);
       setPrefetchedNext(third);
       setPrefetchedSecondNext(fourth);
-      setUsedStartupIds(currentUsedIds);
+      setUsedStartupIds(currentUsedIds); // Keep as useState
       setScore(0);
       setGameOver(false);
       setShowRightValuation(false);
@@ -187,11 +187,11 @@ export default function StartupValuationGame() {
       setScore((prev) => prev + 1)
       setIsAnimating(true)
 
-      const newUsedIdsForNextRound = new Set(usedStartupIds);
-      newUsedIdsForNextRound.delete(leftStartup.id);
+      const newUsedIdsForNextRound = new Set(usedStartupIds); // Use the state variable
+      newUsedIdsForNextRound.delete(leftStartup.id); // Remove the old left startup
 
       const newPrefetchedSecondNextCandidate = getRandomStartup(newUsedIdsForNextRound);
-      newUsedIdsForNextRound.add(newPrefetchedSecondNextCandidate.id);
+      newUsedIdsForNextRound.add(newPrefetchedSecondNextCandidate.id); // Add the newly picked one
 
       try {
         await preloadImage(getSupabaseImageUrl(newPrefetchedSecondNextCandidate.image_url) || "/placeholder.svg");
@@ -201,7 +201,7 @@ export default function StartupValuationGame() {
           setRightStartup(prefetchedNext);
           setPrefetchedNext(prefetchedSecondNext);
           setPrefetchedSecondNext(newPrefetchedSecondNextCandidate);
-          setUsedStartupIds(newUsedIdsForNextRound);
+          setUsedStartupIds(newUsedIdsForNextRound); // Update the state
           setShowRightValuation(false);
           setIsAnimating(false);
           setLastGuess(null);
@@ -213,7 +213,7 @@ export default function StartupValuationGame() {
           setRightStartup(prefetchedNext);
           setPrefetchedNext(prefetchedSecondNext);
           setPrefetchedSecondNext(newPrefetchedSecondNextCandidate);
-          setUsedStartupIds(newUsedIdsForNextRound);
+          setUsedStartupIds(newUsedIdsForNextRound); // Update the state even on error
           setShowRightValuation(false);
           setIsAnimating(false);
           setLastGuess(null);
@@ -224,15 +224,6 @@ export default function StartupValuationGame() {
         setGameOver(true)
       }, 1500)
     }
-  }
-
-  const getScoreMessage = (score: number) => {
-    if (score === 0) return "Better luck next time!"
-    if (score <= 3) return "Not bad for a beginner!"
-    if (score <= 7) return "Pretty good startup knowledge!"
-    if (score <= 12) return "Impressive! You know your startups!"
-    if (score <= 20) return "Wow! Startup valuation expert!"
-    return "LEGENDARY! You're a startup oracle!"
   }
 
   if (loading) {
@@ -259,13 +250,14 @@ export default function StartupValuationGame() {
   const rightDisplayValuation = formatValuation(rightStartup.valuation);
 
   // Determine actual comparison result for game over message, based on rounded values
-  const actualComparisonResult = getRoundedValuationNumber(rightStartup.valuation) > getRoundedValuationNumber(leftStartup.valuation) ? "higher" :
-                                 getRoundedValuationNumber(rightStartup.valuation) < getRoundedValuationNumber(leftStartup.valuation) ? "lower" : "the same as";
+  const actualComparisonResult = getRoundedValuationNumber(rightStartup.valuation) > getRoundedValuationNumber(leftStartup.valuation) ? "more" :
+                                 getRoundedValuationNumber(rightStartup.valuation) < getRoundedValuationNumber(leftStartup.valuation) ? "less" : "the same";
 
 
   return (
     <div className="h-screen w-full bg-gradient-to-br from-pink-400 via-pink-500 to-orange-400">
       <div className="container mx-auto px-2 py-4 h-full flex flex-col max-w-7xl justify-between sm:px-3 sm:py-6">
+        {/* Title and Subtitle are always displayed */}
         <div className="flex flex-col items-center mb-1 sm:mb-2 relative">
           <div className="text-center w-full">
             <h1
@@ -286,15 +278,7 @@ export default function StartupValuationGame() {
             </p>
           </div>
 
-          <div className="w-full flex justify-center mt-1 sm:mt-0 lg:mt-4">
-            <Badge
-              className="text-xs px-2 py-0.5 bg-white text-pink-600 font-bold border-2 border-black rounded-full shadow-lg sm:text-sm lg:text-base lg:px-4 lg:py-2"
-              style={{ boxShadow: "4px 4px 0px rgba(0, 0, 0, 1)" }}
-            >
-              Score: {score}
-            </Badge>
-          </div>
-
+          {/* Only show "Demo Mode" badge if using fallback data */}
           {usingFallbackData && (
             <div className="absolute top-0 right-0 bg-yellow-400 text-black text-xs px-2 py-1 rounded-bl-md flex items-center">
               <AlertCircle className="w-3 h-3 mr-1" />
@@ -304,49 +288,36 @@ export default function StartupValuationGame() {
         </div>
 
         {gameOver ? (
-          <div className="flex-1 flex items-center justify-center px-2 sm:px-4">
+          // Modified Game Over section
+          <div className="flex-1 flex flex-col items-center pt-[100px] sm:pt-[150px] md:pt-[200px] lg:pt-[150px] xl:pt-[150px] px-2 sm:px-4">
             <div className="text-center max-w-md w-full">
-              <h2 className="text-2xl sm:text-4xl font-black text-white mb-3 sm:mb-4">GAME OVER!</h2>
+              {/* Final Score Badge */}
+              <Badge
+                className="text-lg sm:text-xl lg:text-2xl px-4 py-1 bg-white text-pink-600 font-bold border-2 border-black rounded-full shadow-lg mb-5 sm:px-6 sm:py-2 sm:rounded-2xl"
+                style={{ boxShadow: "4px 4px 0px rgba(0, 0, 0, 1)" }}
+              >
+                Final Score{" : "}
+                {score}
+              </Badge>
 
-              <div className="bg-white/20 backdrop-blur-lg rounded-xl p-3 mb-3 border border-white/30 sm:rounded-2xl sm:p-4 sm:mb-4">
-                <div className="flex items-center justify-center mb-1 sm:mb-2">
-                  <Trophy className="w-4 h-4 text-yellow-300 mr-1 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="text-base font-bold text-white sm:text-lg">Final Score</span>
+              <div className="mb-6">
+                <div className="flex items-center justify-center mb-2">
+                  <Zap className="w-4 h-4 text-white mr-1 sm:w-5 sm:h-5" />
+                  <span className="text-lg font-bold text-white sm:text-xl">Wrong Guess!</span>
                 </div>
-                <div className="text-3xl font-black bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent mb-1 sm:text-4xl sm:mb-2">
-                  {score}
-                </div>
-                <p className="text-xs text-white/90 font-medium sm:text-sm">{getScoreMessage(score)}</p>
-              </div>
-
-              <div className="mb-3 sm:mb-4">
-                <div className="flex items-center justify-center mb-1 sm:mb-2">
-                  <Zap className="w-3 h-3 text-white mr-1 sm:w-4 sm:h-4" />
-                  <span className="text-sm font-bold text-white sm:text-base">Wrong Guess!</span>
-                </div>
-                <p className="text-xs text-white/90 mb-2 sm:text-sm sm:mb-3">
-                  You guessed <span className="font-bold text-yellow-300">{lastGuess}</span>, but{" "}
-                  <span className="font-bold text-yellow-300">{rightStartup.name}</span> is actually{" "}
-                  <span className="font-bold text-yellow-300">
-                    {actualComparisonResult}
-                  </span>{" "}
-                  <span className="font-bold text-yellow-300">{leftStartup.name}</span>{" "}
-                  (based on rounded values: ${leftDisplayValuation} vs ${rightDisplayValuation})
+                <p className="text-base text-white/90 sm:text-lg">
+                  You guessed <span className="font-bold text-yellow-300">{lastGuess}</span>
+                  <br />
+                  but <span className="font-bold text-yellow-300">{rightStartup.name}</span> is actually worth{" "}
+                  <span className="font-bold text-yellow-300">{actualComparisonResult}</span> than{" "}
+                  <span className="font-bold text-yellow-300">{leftStartup.name}</span>
                 </p>
-                <div className="flex items-center justify-center gap-1.5 text-xs sm:gap-2 sm:text-sm">
-                  <div className="bg-white/20 rounded-md px-2 py-0.5 sm:rounded-lg sm:px-3 sm:py-1">
-                    <span className="font-bold text-green-300">{leftStartup.name}</span>
-                  </div>
-                  <div className="text-white font-bold">VS</div>
-                  <div className="bg-white/20 rounded-md px-2 py-0.5 sm:rounded-lg sm:px-3 sm:py-1">
-                    <span className="font-bold text-blue-300">{rightStartup.name}</span>
-                  </div>
-                </div>
               </div>
 
               <Button
                 onClick={initializeGame}
-                className="bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-bold px-5 py-2.5 text-sm rounded-lg border-0 shadow-lg transform hover:scale-105 transition-all sm:px-6 sm:py-3 sm:text-base sm:rounded-xl"
+                className="bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white font-bold px-6 py-3 text-lg rounded-xl border-2 border-black transform hover:scale-105 transition-all w-full max-w-[200px] mx-auto"
+                style={{ boxShadow: "6px 6px 0px rgba(0, 0, 0, 1)" }} // Added the specific boxShadow
               >
                 🚀 Play Again
               </Button>
@@ -354,10 +325,19 @@ export default function StartupValuationGame() {
           </div>
         ) : (
           <>
+            {/* The score badge is now gone from here when not game over */}
+            <div className="w-full flex justify-center mt-1 sm:mt-0 lg:mt-4 mb-2 sm:mb-2 lg:mb-4">
+                <Badge
+                  className="text-xs px-2 py-0.5 bg-white text-pink-600 font-bold border-2 border-black rounded-full shadow-lg sm:text-sm lg:text-base lg:px-4 lg:py-2"
+                  style={{ boxShadow: "4px 4px 0px rgba(0, 0, 0, 1)" }}
+                >
+                  Score: {score}
+                </Badge>
+              </div>
             <div className="relative flex-1 flex flex-col lg:flex-row gap-6 lg:gap-10 justify-center items-center lg:mt-8 overflow-y-auto custom-scrollbar">
               <div className="flex-1 flex flex-col items-center min-h-0">
                 <Card
-                  className="w-full max-w-[250px] sm:max-w-xs lg:max-w-md bg-amber-50 border-2 border-black rounded-lg lg:rounded-md overflow-hidden mb-1 sm:rounded-2xl sm:mb-2"
+                  className="w-full max-w-[250px] sm:max-w-xs lg:max-w-md bg-amber-50 border-2 border-black rounded-lg lg:rounded-md overflow-hidden mb-1 sm:rounded-2xl sm:mb-2 sm:pt-0"
                   style={{ boxShadow: "6px 6px 0px rgba(0, 0, 0, 1)" }}
                 >
                   <CardContent className="p-1.5 sm:p-4 lg:p-3 min-h-[160px] sm:min-h-[220px] flex flex-col justify-between">
