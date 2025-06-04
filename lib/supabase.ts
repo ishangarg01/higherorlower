@@ -6,8 +6,8 @@ export interface Startup {
   description: string
   valuation: number
   image_url: string | null
-  created_at: string
-  updated_at: string
+  created_at?: string
+  updated_at?: string
 }
 
 // Try to get Supabase client, but don't throw if environment variables are missing
@@ -68,3 +68,5 @@ export const uploadImageToSupabase = async (file: File, fileName: string) => {
 
   return data.path
 }
+
+
